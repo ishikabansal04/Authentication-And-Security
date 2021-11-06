@@ -428,7 +428,8 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String,
     googleId: String,
-    facebookId: String
+    facebookId: String,
+    secret: String
 }); 
 
 userSchema.plugin(passportLocalMongoose);
@@ -455,7 +456,7 @@ passport.serializeUser(function(user, done) {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://quiet-ocean-12048.herokuapp.com/auth/google/secrets",
+    callbackURL: "http://localhost:3000/auth/google/secrets",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
   },
   function(accessToken, refreshToken, profile, cb) {
@@ -473,7 +474,7 @@ passport.use(new GoogleStrategy({
 passport.use(new FacebookStrategy({
     clientID: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackURL: "https://quiet-ocean-12048.herokuapp.com/auth/facebook/secrets"
+    callbackURL: "http://localhost:3000/auth/facebook/secrets"
   },
   function(accessToken, refreshToken, profile, cb) {
 
@@ -538,6 +539,15 @@ app.get("/logout", function(req, res){
     res.redirect("/");
 });
 
+app.get("/submit", function(req, res){
+    if(req.isAuthenticated()){
+        res.render("submit");
+    }
+    else{
+        res.redirect("/login");
+    }
+});
+
 app.post("/register", function(req, res){
     User.register({username: req.body.username}, req.body.password, function(err, user){
         if(err){
@@ -570,10 +580,25 @@ app.post("/login", function(req, res){
     });
 }); 
 
-let port = process.env.PORT;
-if(port == null || port == ""){
-    port = 3000;
-}
-app.listen(port, function(){
-    console.log("Server has started");
+app.post("/submit", function(res, res){
+    const secret = req.body.secret;
+
+    User.findById(req.body.id, function(err, foundUser){
+        if(err){
+            console.log(err);
+        }
+        else{
+            if(foundUser){
+                foundUser.secret = secret;
+                foundUser.save(function(){
+                    res.redirect("/secrets");
+                });
+            }
+        }
+    });
+});
+
+
+app.listen(process.env.PORT || 3000, function(){
+    console.log("Server started on port 3000");
 });
