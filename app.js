@@ -462,7 +462,7 @@ passport.use(new GoogleStrategy({
 
     console.log(profile);
 
-    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+    User.findOrCreate({ googleId: profile.id , username: profile.displayName}, function (err, user) {
       return cb(err, user);
     });
   }
